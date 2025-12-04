@@ -1,0 +1,5 @@
+{
+  "name": "CryptoTactician",
+  "description": "一个紧凑的暗黑风格加密货币计算器，支持模拟交易、事件战法预测以及画中画（悬浮窗）多任务处理。",
+  "requestFramePermissions": []
+}
