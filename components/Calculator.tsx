@@ -26,7 +26,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
   const [margin, setMargin] = useState<number | null>(null);
   const [liqPrice, setLiqPrice] = useState<number | null>(null);
 
-  // Auto-fill entry price when coin changes (optional, but requested behavior implies user wants control)
+  // Auto-fill entry price if empty when coin changes
   useEffect(() => {
     if (activeCoin && !entryPrice) {
       setEntryPrice(activeCoin.current_price.toString());
@@ -92,8 +92,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
     setMargin(requiredMargin);
 
     // 3. Calculate Liquidation Price (Approximate)
-    // Long: Entry * (1 - 1/Lev)
-    // Short: Entry * (1 + 1/Lev)
     if (mode === 'future') {
         let liq = 0;
         if (side === 'long') {
@@ -144,176 +142,168 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 shadow-lg border border-gray-700">
-      {/* Header / Mode Toggles */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex bg-gray-900 rounded p-1">
-          <button
-            onClick={() => setMode('spot')}
-            className={`px-3 py-1 text-xs font-medium rounded ${mode === 'spot' ? 'bg-gray-700 text-white shadow' : 'text-gray-500'}`}
-          >
-            现货
-          </button>
-          <button
-            onClick={() => setMode('future')}
-            className={`px-3 py-1 text-xs font-medium rounded ${mode === 'future' ? 'bg-gray-700 text-white shadow' : 'text-gray-500'}`}
-          >
-            合约
-          </button>
-        </div>
-        <div className="flex items-center space-x-2">
-            <span className="text-sm font-bold text-white font-mono">{activeCoin?.symbol.toUpperCase() || '---'}</span>
-            <span className="text-xs text-gray-500">${activeCoin?.current_price.toLocaleString()}</span>
+    <div className="p-4 space-y-4 text-sm">
+      {/* Mode & Side Selection */}
+      <div className="grid grid-cols-2 gap-3">
+         {/* Mode Switch */}
+         <div className="bg-gray-900 p-0.5 rounded flex text-center">
+            <button
+                onClick={() => setMode('spot')}
+                className={`flex-1 py-1 text-[10px] rounded-[2px] font-bold ${mode === 'spot' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-400'}`}
+            >
+                现货
+            </button>
+            <button
+                onClick={() => setMode('future')}
+                className={`flex-1 py-1 text-[10px] rounded-[2px] font-bold ${mode === 'future' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-400'}`}
+            >
+                合约
+            </button>
+         </div>
+
+         {/* Side Switch */}
+         <div className="flex bg-gray-900 rounded p-0.5">
+            <button
+            onClick={() => setSide('long')}
+            className={`flex-1 py-1 text-[10px] font-bold rounded-[2px] transition-all ${
+                side === 'long' 
+                ? 'bg-accent-green text-gray-900' 
+                : 'text-gray-500 hover:text-gray-400'
+            }`}
+            >
+            做多
+            </button>
+            <button
+            onClick={() => setSide('short')}
+            disabled={mode === 'spot'}
+            className={`flex-1 py-1 text-[10px] font-bold rounded-[2px] transition-all ${
+                side === 'short'
+                ? 'bg-accent-red text-white'
+                : 'text-gray-500 hover:text-gray-400'
+            } ${mode === 'spot' ? 'opacity-30 cursor-not-allowed' : ''}`}
+            >
+            做空
+            </button>
         </div>
       </div>
 
-      {/* Side Toggle */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <button
-          onClick={() => setSide('long')}
-          className={`py-1.5 rounded text-sm font-bold border transition-all ${
-            side === 'long' 
-              ? 'bg-accent-green/10 text-accent-green border-accent-green' 
-              : 'bg-gray-900 text-gray-500 border-transparent'
-          }`}
-        >
-          做多 (Long)
-        </button>
-        <button
-          onClick={() => setSide('short')}
-          disabled={mode === 'spot'}
-          className={`py-1.5 rounded text-sm font-bold border transition-all ${
-            side === 'short'
-              ? 'bg-accent-red/10 text-accent-red border-accent-red'
-              : 'bg-gray-900 text-gray-500 border-transparent'
-          } ${mode === 'spot' ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          做空 (Short)
-        </button>
-      </div>
-
-      {/* Inputs */}
-      <div className="space-y-3">
-        {/* Leverage Slider */}
-        {mode === 'future' && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>杠杆倍数</span>
-              <span>{leverage}x</span>
+      {/* Leverage */}
+      {mode === 'future' && (
+        <div className="space-y-1">
+            <div className="flex justify-between items-center text-[10px] text-gray-500 uppercase">
+                <span>杠杆倍数</span>
+                <span className="text-accent-blue font-bold">{leverage}x</span>
             </div>
             <input
-              type="range"
-              min="1"
-              max="125"
-              value={leverage}
-              onChange={(e) => setLeverage(parseInt(e.target.value))}
-              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent-blue"
+                type="range"
+                min="1"
+                max="125"
+                value={leverage}
+                onChange={(e) => setLeverage(parseInt(e.target.value))}
+                className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-accent-blue"
             />
-          </div>
-        )}
-
-        {/* Entry & Exit */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1 relative">
-            <div className="flex justify-between">
-                <label className="text-[10px] uppercase text-gray-500">开仓价格</label>
-                <button onClick={() => fillCurrentPrice('entry')} className="text-[10px] text-accent-blue hover:text-white flex items-center gap-0.5">
-                    <Crosshair size={10} /> 当前
-                </button>
-            </div>
-            <input
-              type="number"
-              value={entryPrice}
-              onChange={(e) => setEntryPrice(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-sm text-white focus:border-accent-blue outline-none"
-              placeholder="0.00"
-            />
-          </div>
-          <div className="space-y-1 relative">
-             <div className="flex justify-between">
-                <label className="text-[10px] uppercase text-gray-500">平仓价格</label>
-                <button onClick={() => fillCurrentPrice('exit')} className="text-[10px] text-accent-blue hover:text-white flex items-center gap-0.5">
-                    <Crosshair size={10} /> 当前
-                </button>
-            </div>
-            <input
-              type="number"
-              value={exitPrice}
-              onChange={(e) => setExitPrice(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-sm text-white focus:border-accent-blue outline-none"
-              placeholder="Target"
-            />
-          </div>
         </div>
+      )}
 
-        {/* Amount Section */}
-        <div className="bg-gray-900/50 p-2 rounded border border-gray-800 space-y-2">
-            <div className="flex justify-between items-center text-[10px] text-gray-400">
-                <span>数量/金额设置</span>
-                <div className="flex gap-2">
-                    <button onClick={() => setUnit(unit === 'USDT' ? 'COIN' : 'USDT')} className="hover:text-white underline">
-                        {unit}
-                    </button>
-                    {unit === 'USDT' && (
-                         <button onClick={() => setBasis(basis === 'principal' ? 'total' : 'principal')} className="hover:text-white underline">
-                         {basis === 'principal' ? '按本金' : '按总值'}
-                     </button>
-                    )}
-                </div>
-            </div>
-            <div className="relative">
+      {/* Price Inputs */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+           <div className="flex justify-between items-end">
+                <label className="text-[10px] text-gray-500">开仓价</label>
+                <button onClick={() => fillCurrentPrice('entry')} className="text-[10px] text-accent-blue hover:text-white flex items-center">
+                    当前
+                </button>
+           </div>
+           <div className="relative">
                 <input
-                    type="number"
-                    value={amountInput}
-                    onChange={(e) => setAmountInput(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-sm text-white focus:border-accent-blue outline-none pr-12"
-                    placeholder="0.00"
+                type="number"
+                value={entryPrice}
+                onChange={(e) => setEntryPrice(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-800 focus:border-accent-blue rounded px-2 py-1.5 text-xs text-white outline-none"
+                placeholder="Entry Price"
                 />
-                <span className="absolute right-2 top-1.5 text-xs text-gray-500 font-mono">
-                    {unit === 'USDT' ? 'USDT' : activeCoin?.symbol.toUpperCase() || 'COIN'}
-                </span>
-            </div>
+           </div>
+        </div>
+        <div className="space-y-1">
+           <div className="flex justify-between items-end">
+                <label className="text-[10px] text-gray-500">平仓价</label>
+                <button onClick={() => fillCurrentPrice('exit')} className="text-[10px] text-accent-blue hover:text-white flex items-center">
+                    当前
+                </button>
+           </div>
+           <div className="relative">
+                <input
+                type="number"
+                value={exitPrice}
+                onChange={(e) => setExitPrice(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-800 focus:border-accent-blue rounded px-2 py-1.5 text-xs text-white outline-none"
+                placeholder="Exit Price"
+                />
+           </div>
         </div>
       </div>
 
-      {/* Results */}
-      <div className="mt-4 pt-4 border-t border-gray-700">
-        <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-center mb-4">
-            <div className="bg-gray-900/50 p-1.5 rounded">
-                <div className="text-[10px] text-gray-500">保证金 (Margin)</div>
-                <div className="text-sm font-mono text-gray-300">{margin ? margin.toFixed(2) : '--'}</div>
+      {/* Amount Input */}
+      <div className="space-y-1">
+         <div className="flex justify-between text-[10px] text-gray-500">
+            <span>数量 / 金额</span>
+            <div className="space-x-2">
+                <button onClick={() => setUnit(unit === 'USDT' ? 'COIN' : 'USDT')} className="hover:text-white underline decoration-dotted">
+                    单位: {unit}
+                </button>
+                {unit === 'USDT' && (
+                    <button onClick={() => setBasis(basis === 'principal' ? 'total' : 'principal')} className="hover:text-white underline decoration-dotted">
+                        {basis === 'principal' ? '按本金' : '按总值'}
+                    </button>
+                )}
             </div>
-            <div className="bg-gray-900/50 p-1.5 rounded relative overflow-hidden">
-                 {mode === 'future' && (
-                     <div className="absolute right-1 top-1 text-gray-600">
-                         <ArrowDownToLine size={10} />
-                     </div>
-                 )}
-                <div className="text-[10px] text-gray-500">强平价格 (Liq)</div>
-                <div className="text-sm font-mono text-orange-400">{liqPrice ? liqPrice.toFixed(2) : '--'}</div>
-            </div>
-            <div className="bg-gray-900/50 p-1.5 rounded">
-                <div className="text-[10px] text-gray-500">预估盈亏 (PNL)</div>
-                <div className={`text-sm font-bold font-mono ${pnl && pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+         </div>
+         <div className="relative">
+            <input
+                type="number"
+                value={amountInput}
+                onChange={(e) => setAmountInput(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-800 focus:border-accent-blue rounded px-2 py-1.5 text-xs text-white outline-none pr-10"
+                placeholder="0.00"
+            />
+            <span className="absolute right-2 top-1.5 text-[10px] text-gray-500 font-mono">
+                {unit === 'USDT' ? 'USDT' : activeCoin?.symbol.toUpperCase()}
+            </span>
+         </div>
+      </div>
+
+      {/* Results Dashboard */}
+      <div className="bg-gray-900/30 border border-gray-800 rounded p-2 grid grid-cols-2 gap-2">
+          <div className="flex justify-between items-center">
+             <span className="text-[10px] text-gray-500">保证金</span>
+             <span className="text-xs font-mono text-gray-300">{margin ? margin.toFixed(1) : '--'}</span>
+          </div>
+          <div className="flex justify-between items-center">
+             <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                 <ArrowDownToLine size={10}/> 强平
+             </span>
+             <span className="text-xs font-mono text-orange-400">{liqPrice ? liqPrice.toFixed(2) : '--'}</span>
+          </div>
+          <div className="flex justify-between items-center col-span-2 border-t border-gray-800/50 pt-1 mt-1">
+             <span className="text-[10px] text-gray-500">预估盈亏</span>
+             <div className="text-right">
+                 <span className={`text-sm font-bold font-mono ${pnl && pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                     {pnl ? pnl.toFixed(2) : '--'}
-                </div>
-            </div>
-            <div className="bg-gray-900/50 p-1.5 rounded">
-                <div className="text-[10px] text-gray-500">收益率 (ROE)</div>
-                <div className={`text-sm font-bold font-mono ${roe && roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                    {roe ? `${roe.toFixed(2)}%` : '--'}
-                </div>
-            </div>
-        </div>
-
-        <button
-            onClick={handleSave}
-            className="w-full flex items-center justify-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs font-bold transition-colors shadow"
-        >
-            <Save size={14} />
-            <span>保存模拟持仓</span>
-        </button>
+                 </span>
+                 <span className={`text-[10px] ml-2 ${roe && roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                    ({roe ? roe.toFixed(2) : '--'}%)
+                 </span>
+             </div>
+          </div>
       </div>
+
+      <button
+        onClick={handleSave}
+        className="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white py-2 rounded text-xs font-bold transition-colors flex items-center justify-center gap-2"
+      >
+        <Save size={12} />
+        保存至模拟盘
+      </button>
     </div>
   );
 };

@@ -27,21 +27,21 @@ export const Positions: React.FC<PositionsProps> = ({ positions, prices, onDelet
 
   if (positions.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-4 text-center text-gray-500 text-xs italic">
-        暂无模拟持仓记录。
+      <div className="p-4 text-center text-gray-600 text-[10px]">
+        暂无持仓
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
-      <div className="bg-gray-900 px-3 py-2 flex justify-between items-center border-b border-gray-700">
-        <h3 className="text-xs font-bold text-gray-300">模拟持仓列表</h3>
+    <div className="pb-4">
+      <div className="px-4 py-2 flex justify-between items-center bg-gray-900/30">
+        <h3 className="text-[10px] font-bold text-gray-500 uppercase">模拟持仓 ({positions.length})</h3>
         <span className={`text-xs font-mono font-bold ${totalPnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-          总计: ${totalPnl.toFixed(2)}
+          ${totalPnl.toFixed(2)}
         </span>
       </div>
-      <div className="max-h-48 overflow-y-auto">
+      <div>
         {positions.map((pos) => {
           const currentPrice = prices[pos.coinId] || pos.entryPrice;
           const pnl = pos.side === 'long' 
@@ -51,35 +51,30 @@ export const Positions: React.FC<PositionsProps> = ({ positions, prices, onDelet
           const roe = (pnl / ((pos.amount * pos.entryPrice) / pos.leverage)) * 100;
 
           return (
-            <div key={pos.id} className="p-3 border-b border-gray-700/50 hover:bg-gray-750 transition-colors group relative">
+            <div key={pos.id} className="px-4 py-2 border-b border-gray-800 hover:bg-gray-900/50 group relative">
               <div className="flex justify-between items-start mb-1">
-                <div className="flex items-center gap-1">
-                    <span className={`text-[10px] font-bold px-1 rounded ${pos.side === 'long' ? 'bg-accent-green text-gray-900' : 'bg-accent-red text-white'}`}>
+                <div className="flex items-center gap-1.5">
+                    <span className={`text-[9px] font-bold px-1 rounded-[2px] ${pos.side === 'long' ? 'bg-accent-green text-gray-900' : 'bg-accent-red text-white'}`}>
                         {pos.side === 'long' ? '多' : '空'}
                     </span>
                     <span className="text-xs font-bold text-gray-200">{pos.symbol.toUpperCase()}</span>
-                    <span className="text-[10px] text-gray-500 bg-gray-800 px-1 rounded">{pos.mode === 'spot' ? '现货' : `${pos.leverage}x`}</span>
+                    <span className="text-[9px] text-gray-500">{pos.mode === 'spot' ? '现货' : `${pos.leverage}x`}</span>
                 </div>
-                <div className={`text-xs font-mono font-bold ${pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                    {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}
+                <div className="text-right">
+                    <div className={`text-xs font-mono font-bold ${pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                        {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}
+                    </div>
                 </div>
               </div>
               
-              <div className="flex justify-between items-center text-[10px] text-gray-400">
-                  <div>
-                      开仓: <span className="text-gray-300">{pos.entryPrice}</span>
-                  </div>
-                   <div>
-                      当前: <span className="text-gray-300">{currentPrice}</span>
-                  </div>
-                  <div>
-                      ROE: <span className={`${roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>{roe.toFixed(1)}%</span>
-                  </div>
+              <div className="flex justify-between items-center text-[9px] text-gray-500 font-mono">
+                  <span>@{pos.entryPrice} → {currentPrice}</span>
+                  <span className={`${roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>{roe.toFixed(2)}%</span>
               </div>
 
               <button 
                 onClick={() => onDelete(pos.id)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 bg-gray-900 text-red-500 rounded hover:bg-red-900 transition-all"
+                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-gray-600 hover:text-red-500 transition-all"
               >
                   <Trash2 size={12} />
               </button>
