@@ -5,7 +5,8 @@ const BASE_URL = 'https://api.coingecko.com/api/v3';
 // Cache mechanism to avoid hitting rate limits too hard
 let coinCache: Coin[] = [];
 let lastFetchTime = 0;
-const CACHE_DURATION = 30000; // 30 seconds
+// Increased cache duration to 60s to handle larger data set safely
+const CACHE_DURATION = 60000; 
 
 export const getTopCoins = async (): Promise<Coin[]> => {
   const now = Date.now();
@@ -14,11 +15,12 @@ export const getTopCoins = async (): Promise<Coin[]> => {
   }
 
   try {
+    // Increased per_page from 20 to 250 to cover most altcoins
     const response = await fetch(
-      `${BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false`
+      `${BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false`
     );
     if (!response.ok) {
-        // If rate limited, return cache if available, else empty
+        // If rate limited (429), return cache if available
         if(response.status === 429 && coinCache.length > 0) return coinCache;
         throw new Error('Network response was not ok');
     }
@@ -33,8 +35,8 @@ export const getTopCoins = async (): Promise<Coin[]> => {
 };
 
 export const searchCoins = async (query: string): Promise<Coin[]> => {
-    // Simple client-side search on the cached top 20 coins for demo stability
-    // In a real app with backend proxy, we would hit the search endpoint
+    // Client-side search on the cached top 250 coins
+    // This avoids hitting the /search endpoint which has stricter rate limits
     if (!query) return [];
     const lowerQuery = query.toLowerCase();
     
@@ -48,10 +50,6 @@ export const searchCoins = async (query: string): Promise<Coin[]> => {
 }
 
 export const getPrice = async (ids: string[]): Promise<Record<string, number>> => {
-    // This is for refreshing specific prices for positions/games
-    // To respect rate limits, we might just look up in cache if it was recently updated
-    // or do a batch request if really needed. For this demo, we use the cache primarily.
-    
     // Force refresh cache if it's old
     await getTopCoins();
     
