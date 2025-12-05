@@ -6,9 +6,9 @@ import { Prediction } from './components/Prediction';
 import { getTopCoins } from './services/api';
 import { Coin, Position } from './types';
 import { usePiP } from './hooks/usePiP';
-import { Layers, Search, Calculator as CalcIcon, Gamepad2, Minimize2, Pin, X } from 'lucide-react';
+import { Layers, Search, Calculator as CalcIcon, Gamepad2, Minimize2, Pin, X, List } from 'lucide-react';
 
-type Tab = 'calculator' | 'prediction';
+type Tab = 'calculator' | 'positions' | 'prediction';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('calculator');
@@ -28,9 +28,8 @@ export default function App() {
     const loadCoins = async () => {
       const data = await getTopCoins();
       setCoins(data);
-      if (data.length > 0 && !activeCoin) {
-        setActiveCoin(data[0]);
-      }
+      // REMOVED: Auto-selection of first coin logic
+      
       // Initialize price map
       const prices: Record<string, number> = {};
       data.forEach(c => prices[c.id] = c.current_price);
@@ -72,7 +71,13 @@ export default function App() {
                 onClick={() => setActiveTab('calculator')}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-[2px] text-xs font-bold transition-all ${activeTab === 'calculator' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
               >
-                  <CalcIcon size={12} /> 计算器
+                  <CalcIcon size={12} /> 计算
+              </button>
+              <button 
+                onClick={() => setActiveTab('positions')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-[2px] text-xs font-bold transition-all ${activeTab === 'positions' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                  <List size={12} /> 持仓
               </button>
               <button 
                 onClick={() => setActiveTab('prediction')}
@@ -91,7 +96,7 @@ export default function App() {
       </div>
 
       <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-gray-950">
-          {activeTab === 'calculator' ? (
+          {activeTab === 'calculator' && (
             <div className="flex flex-col min-h-full">
                 {/* Sticky Search Bar */}
                 <div className="sticky top-0 z-30 bg-gray-950/95 backdrop-blur border-b border-gray-800 p-3">
@@ -124,15 +129,17 @@ export default function App() {
                         )}
                     </div>
                 </div>
-
                 <Calculator activeCoin={activeCoin} onSavePosition={handleSavePosition} />
-                
-                {/* Divider */}
-                <div className="h-2 bg-gray-900 border-y border-gray-800 shrink-0"></div>
-                
-                <Positions positions={positions} prices={currentPrices} onDelete={handleDeletePosition} />
             </div>
-          ) : (
+          )}
+
+          {activeTab === 'positions' && (
+             <div className="h-full">
+                 <Positions positions={positions} prices={currentPrices} onDelete={handleDeletePosition} />
+             </div>
+          )}
+
+          {activeTab === 'prediction' && (
             <div className="h-full">
                 <Prediction currentPrices={currentPrices} />
             </div>
@@ -141,7 +148,7 @@ export default function App() {
       
       {!pipWindow && (
         <footer className="py-1 text-center text-[9px] text-gray-700 border-t border-gray-900 shrink-0 select-none bg-gray-950">
-            CryptoTactician v1.2
+            CryptoTactician v1.3
         </footer>
       )}
     </div>

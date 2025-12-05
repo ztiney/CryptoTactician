@@ -187,23 +187,21 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
         </div>
       </div>
 
-      {/* Leverage */}
-      {mode === 'future' && (
-        <div className="space-y-1">
-            <div className="flex justify-between items-center text-[10px] text-gray-500 uppercase">
-                <span>杠杆倍数</span>
-                <span className="text-accent-blue font-bold">{leverage}x</span>
-            </div>
-            <input
-                type="range"
-                min="1"
-                max="125"
-                value={leverage}
-                onChange={(e) => setLeverage(parseInt(e.target.value))}
-                className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-accent-blue"
-            />
-        </div>
-      )}
+      {/* Leverage - Always rendered to maintain layout height, dimmed in Spot mode */}
+      <div className={`space-y-1 transition-opacity duration-200 ${mode === 'spot' ? 'opacity-25 pointer-events-none' : ''}`}>
+          <div className="flex justify-between items-center text-[10px] text-gray-500 uppercase">
+              <span>杠杆倍数</span>
+              <span className="text-accent-blue font-bold">{leverage}x</span>
+          </div>
+          <input
+              type="range"
+              min="1"
+              max="125"
+              value={leverage}
+              onChange={(e) => setLeverage(parseInt(e.target.value))}
+              className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-accent-blue"
+          />
+      </div>
 
       {/* Price Inputs */}
       <div className="grid grid-cols-2 gap-3">
