@@ -6,7 +6,7 @@ import { Prediction } from './components/Prediction';
 import { getTopCoins } from './services/api';
 import { Coin, Position } from './types';
 import { usePiP } from './hooks/usePiP';
-import { Layers, Search, Calculator as CalcIcon, Gamepad2, Minimize2, Pin } from 'lucide-react';
+import { Layers, Search, Calculator as CalcIcon, Gamepad2, Minimize2, Pin, X } from 'lucide-react';
 
 type Tab = 'calculator' | 'prediction';
 
@@ -84,9 +84,9 @@ export default function App() {
            <button 
                 onClick={togglePiP}
                 className={`p-1.5 rounded transition-colors ${pipWindow ? 'text-accent-blue bg-accent-blue/10' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'}`}
-                title={pipWindow ? "恢复到主窗口" : "开启悬浮窗"}
+                title={pipWindow ? "关闭悬浮窗" : "开启悬浮窗"}
             >
-                {pipWindow ? <Minimize2 size={16} /> : <Pin size={16} />}
+                {pipWindow ? <X size={16} /> : <Pin size={16} />}
             </button>
       </div>
 
@@ -147,24 +147,35 @@ export default function App() {
     </div>
   );
 
-  if (pipWindow) {
-    return createPortal(AppContent, pipWindow.document.body);
-  }
-
   return (
-      <>
-        {pipWindow ? (
-             <div className="h-screen w-full flex items-center justify-center bg-gray-950 text-gray-600 flex-col gap-4">
-                <Layers size={48} className="opacity-10 animate-pulse"/>
-                <p className="font-bold text-sm">已切换至悬浮窗模式</p>
-                <button 
-                    onClick={togglePiP} 
-                    className="px-4 py-1.5 bg-gray-900 rounded border border-gray-800 hover:bg-gray-800 text-xs text-gray-300 transition-colors"
-                >
-                    恢复显示
-                </button>
+    <>
+      {pipWindow && createPortal(AppContent, pipWindow.document.body)}
+      
+      {pipWindow ? (
+         <div className="h-screen w-full flex items-center justify-center bg-gray-950 text-gray-600 flex-col gap-4 p-6 text-center">
+            <div className="relative">
+                <Layers size={48} className="text-accent-blue/20 animate-pulse"/>
+                <div className="absolute inset-0 flex items-center justify-center">
+                     <Pin size={20} className="text-accent-blue/50" />
+                </div>
             </div>
-        ) : AppContent}
-      </>
+            
+            <div className="space-y-1">
+                <p className="font-bold text-sm text-gray-300">已切换至悬浮窗模式</p>
+                <p className="text-xs text-gray-600">界面已分离到独立窗口，置顶显示中...</p>
+            </div>
+            
+            <button 
+                onClick={togglePiP} 
+                className="mt-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-xs text-accent-blue font-bold rounded transition-colors flex items-center gap-2"
+            >
+                <Minimize2 size={14} />
+                恢复主窗口显示
+            </button>
+        </div>
+      ) : (
+        AppContent
+      )}
+    </>
   );
 }
