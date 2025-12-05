@@ -83,7 +83,7 @@ export default function App() {
                 onClick={() => setActiveTab('prediction')}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-[2px] text-xs font-bold transition-all ${activeTab === 'prediction' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
               >
-                  <Gamepad2 size={12} /> 战法
+                  <Gamepad2 size={12} /> 事件合约
               </button>
           </div>
            <button 

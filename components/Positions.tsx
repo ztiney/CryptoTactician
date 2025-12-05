@@ -48,11 +48,13 @@ export const Positions: React.FC<PositionsProps> = ({ positions, prices, onDelet
             ? (currentPrice - pos.entryPrice) * pos.amount
             : (pos.entryPrice - currentPrice) * pos.amount;
           
-          const roe = (pnl / ((pos.amount * pos.entryPrice) / pos.leverage)) * 100;
+          // Cost (Principal) = (Total Value in Coin * Entry Price) / Leverage
+          const cost = (pos.amount * pos.entryPrice) / pos.leverage;
+          const roe = (pnl / cost) * 100;
 
           return (
-            <div key={pos.id} className="px-4 py-2 border-b border-gray-800 hover:bg-gray-900/50 group relative">
-              <div className="flex justify-between items-start mb-1">
+            <div key={pos.id} className="px-4 py-3 border-b border-gray-800 hover:bg-gray-900/50 group relative">
+              <div className="flex justify-between items-start mb-1.5">
                 <div className="flex items-center gap-1.5">
                     <span className={`text-[9px] font-bold px-1 rounded-[2px] ${pos.side === 'long' ? 'bg-accent-green text-gray-900' : 'bg-accent-red text-white'}`}>
                         {pos.side === 'long' ? '多' : '空'}
@@ -68,13 +70,16 @@ export const Positions: React.FC<PositionsProps> = ({ positions, prices, onDelet
               </div>
               
               <div className="flex justify-between items-center text-[9px] text-gray-500 font-mono">
-                  <span>@{pos.entryPrice} → {currentPrice}</span>
+                  <span className="text-gray-400">本金: ${cost.toFixed(2)}</span>
                   <span className={`${roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>{roe.toFixed(2)}%</span>
+              </div>
+              <div className="flex justify-between items-center text-[9px] text-gray-600 font-mono mt-0.5">
+                  <span>@{pos.entryPrice} → {currentPrice}</span>
               </div>
 
               <button 
                 onClick={() => onDelete(pos.id)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-gray-600 hover:text-red-500 transition-all"
+                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 bg-gray-800 text-gray-400 hover:text-red-500 hover:bg-gray-700 rounded transition-all"
               >
                   <Trash2 size={12} />
               </button>

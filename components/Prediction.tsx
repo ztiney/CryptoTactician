@@ -80,7 +80,7 @@ export const Prediction: React.FC<PredictionProps> = ({ currentPrices }) => {
   };
 
   const activeGames = games.filter(g => g.status === 'active');
-  const historyGames = games.filter(g => g.status !== 'active');
+  const historyGames = games.filter(g => g.status !== 'active').sort((a, b) => parseInt(b.id) - parseInt(a.id));
   
   const totalGames = historyGames.length;
   const wins = historyGames.filter(g => g.status === 'won').length;
@@ -195,20 +195,31 @@ export const Prediction: React.FC<PredictionProps> = ({ currentPrices }) => {
          {historyGames.length > 0 && (
             <div>
                  <div className="bg-gray-900/30 px-4 py-1 text-[10px] text-gray-500 uppercase font-bold sticky top-0 backdrop-blur">历史记录</div>
-                 {historyGames.slice(0, 15).map(game => (
-                    <div key={game.id} className="px-4 py-2 flex justify-between items-center text-xs border-b border-gray-800 last:border-0 hover:bg-gray-900/30">
-                        <div className="flex items-center gap-2">
-                            <span className={`w-1 h-1 rounded-full ${game.direction === 'up' ? 'bg-accent-green' : 'bg-accent-red'}`}></span>
-                            <span className="text-gray-400 font-mono w-8">{game.symbol}</span>
+                 {historyGames.slice(0, 15).map(game => {
+                    const date = new Date(parseInt(game.id));
+                    const timeStr = `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                    
+                    return (
+                        <div key={game.id} className="px-4 py-2 border-b border-gray-800 last:border-0 hover:bg-gray-900/30">
+                            <div className="flex justify-between items-center text-xs mb-1">
+                                <div className="flex items-center gap-2">
+                                    <span className={`w-1 h-1 rounded-full ${game.direction === 'up' ? 'bg-accent-green' : 'bg-accent-red'}`}></span>
+                                    <span className="text-gray-300 font-bold w-8">{game.symbol}</span>
+                                    <span className="text-[9px] text-gray-500 font-mono">{timeStr}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`font-mono font-bold ${game.status === 'won' ? 'text-accent-green' : 'text-accent-red'}`}>
+                                        {game.status === 'won' ? '+' : '-'}{game.betAmount}
+                                    </span>
+                                    {game.status === 'won' ? <Trophy size={10} className="text-accent-green"/> : <XCircle size={10} className="text-gray-700"/>}
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center text-[9px] text-gray-600 font-mono pl-3">
+                                <span>{game.startPrice} → {game.settledPrice || '---'}</span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                             <span className={`font-mono ${game.status === 'won' ? 'text-accent-green' : 'text-accent-red'}`}>
-                                {game.status === 'won' ? '+' : '-'}{game.betAmount}
-                            </span>
-                            {game.status === 'won' ? <Trophy size={10} className="text-accent-green"/> : <XCircle size={10} className="text-gray-700"/>}
-                        </div>
-                    </div>
-                 ))}
+                    );
+                 })}
             </div>
          )}
       </div>
