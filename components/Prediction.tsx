@@ -6,13 +6,20 @@ interface PredictionProps {
   currentPrices: Record<string, number>; // symbol -> price
 }
 
+const DURATIONS = [
+  { label: '10m', value: 10 },
+  { label: '30m', value: 30 },
+  { label: '1h', value: 60 },
+  { label: '1d', value: 1440 }
+];
+
 export const Prediction: React.FC<PredictionProps> = ({ currentPrices }) => {
   const [games, setGames] = useState<PredictionGame[]>(() => {
     const saved = localStorage.getItem('prediction_games');
     return saved ? JSON.parse(saved) : [];
   });
   const [selectedAsset, setSelectedAsset] = useState<'BTC' | 'ETH'>('BTC');
-  const [duration, setDuration] = useState<1 | 5 | 15>(1);
+  const [duration, setDuration] = useState<number>(10);
   const [betAmount, setBetAmount] = useState<string>('100');
 
   useEffect(() => {
@@ -108,13 +115,13 @@ export const Prediction: React.FC<PredictionProps> = ({ currentPrices }) => {
                     <button onClick={() => setSelectedAsset('ETH')} className={`text-xs px-3 py-1 rounded-[2px] transition-colors ${selectedAsset === 'ETH' ? 'bg-gray-800 text-white font-bold shadow-sm' : 'text-gray-500'}`}>ETH</button>
                 </div>
                 <div className="flex bg-gray-900 rounded p-0.5">
-                    {[1, 5, 15].map((m) => (
+                    {DURATIONS.map((opt) => (
                     <button
-                        key={m}
-                        onClick={() => setDuration(m as any)}
-                        className={`text-[10px] px-2 py-1 rounded-[2px] font-medium transition-all ${duration === m ? 'bg-gray-800 text-accent-blue shadow-sm' : 'text-gray-500'}`}
+                        key={opt.value}
+                        onClick={() => setDuration(opt.value)}
+                        className={`text-[10px] px-2 py-1 rounded-[2px] font-medium transition-all ${duration === opt.value ? 'bg-gray-800 text-accent-blue shadow-sm' : 'text-gray-500'}`}
                     >
-                        {m}m
+                        {opt.label}
                     </button>
                     ))}
                 </div>
@@ -168,6 +175,9 @@ export const Prediction: React.FC<PredictionProps> = ({ currentPrices }) => {
                             <span className={`text-[9px] px-1 rounded font-bold ${game.direction === 'up' ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-red/10 text-accent-red'}`}>
                                 {game.direction === 'up' ? '看多' : '看空'}
                             </span>
+                            <span className="text-[9px] text-gray-500 bg-gray-800/50 px-1 rounded">
+                                {DURATIONS.find(d => d.value === game.duration)?.label}
+                            </span>
                         </div>
                         <div className="text-[9px] text-gray-500 mt-0.5 font-mono">
                             ${game.betAmount} • Entry: {game.startPrice}
@@ -217,5 +227,17 @@ const Countdown: React.FC<{ target: number }> = ({ target }) => {
         return () => clearInterval(i);
     }, [target]);
     
-    return <div className="font-mono text-xs font-bold text-gray-300">{Math.floor(left / 60)}:{(left % 60).toString().padStart(2, '0')}</div>
+    // Format helper
+    const formatTime = (totalSeconds: number) => {
+        if (totalSeconds >= 3600) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            return `${h}h ${m}m`;
+        }
+        const m = Math.floor(totalSeconds / 60);
+        const s = totalSeconds % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    };
+    
+    return <div className="font-mono text-xs font-bold text-gray-300">{formatTime(left)}</div>
 }

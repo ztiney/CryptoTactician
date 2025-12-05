@@ -29,7 +29,7 @@ export interface PredictionGame {
   symbol: string; // BTC or ETH
   startPrice: number;
   targetTime: number; // Timestamp when it ends
-  duration: 1 | 5 | 15; // Minutes
+  duration: number; // Minutes
   direction: 'up' | 'down'; // User prediction
   betAmount: number; // New: Betting amount
   status: 'active' | 'won' | 'lost';
