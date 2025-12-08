@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Coin, TradeMode, TradeSide, AmountUnit, CalculationBasis, Position } from '../types';
-import { Save, Crosshair, ArrowDownToLine } from 'lucide-react';
+import { Save, Crosshair, ArrowDownToLine, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
 interface CalculatorProps {
   activeCoin: Coin | null;
@@ -20,6 +20,16 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
   const [exitPrice, setExitPrice] = useState<string>('');
   const [amountInput, setAmountInput] = useState<string>('');
 
+  // TP/SL State (Percentage of ROE) - Initialized from localStorage
+  const [tpRate, setTpRate] = useState<number>(() => {
+      const saved = localStorage.getItem('calc_tp_rate');
+      return saved ? parseInt(saved, 10) : 0;
+  });
+  const [slRate, setSlRate] = useState<number>(() => {
+      const saved = localStorage.getItem('calc_sl_rate');
+      return saved ? parseInt(saved, 10) : 0;
+  });
+
   // Results
   const [pnl, setPnl] = useState<number | null>(null);
   const [roe, setRoe] = useState<number | null>(null);
@@ -33,9 +43,19 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
     }
   }, [activeCoin]);
 
+  // Handle Mode Switching
   useEffect(() => {
-    if(mode === 'spot') setLeverage(1);
+    if(mode === 'spot') {
+        setLeverage(1);
+        // We do NOT reset TP/SL here anymore, so they are remembered when switching back to Futures
+    }
   }, [mode]);
+
+  // Persist TP/SL settings whenever they change
+  useEffect(() => {
+      localStorage.setItem('calc_tp_rate', tpRate.toString());
+      localStorage.setItem('calc_sl_rate', slRate.toString());
+  }, [tpRate, slRate]);
 
   const fillCurrentPrice = (target: 'entry' | 'exit') => {
       if (activeCoin) {
@@ -108,6 +128,41 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
   useEffect(() => {
     calculate();
   }, [entryPrice, exitPrice, amountInput, leverage, mode, side, unit, basis]);
+
+  // Derived calculations for TP/SL
+  const tpSlResults = useMemo(() => {
+      if (!margin || !entryPrice || mode !== 'future') return null;
+      const entry = parseFloat(entryPrice);
+      if (isNaN(entry)) return null;
+
+      // Formula: Target Price = Entry * (1 ± (ROE% / Leverage))
+      // Long: + for TP, - for SL
+      // Short: - for TP, + for SL
+      
+      const tpFactor = (tpRate / 100) / leverage;
+      const slFactor = (slRate / 100) / leverage;
+
+      let tpPrice = 0;
+      let slPrice = 0;
+
+      if (side === 'long') {
+          tpPrice = entry * (1 + tpFactor);
+          slPrice = entry * (1 - slFactor);
+      } else {
+          tpPrice = entry * (1 - tpFactor);
+          slPrice = entry * (1 + slFactor);
+      }
+
+      const tpValue = margin * (tpRate / 100);
+      const slValue = margin * (slRate / 100); // Loss amount
+
+      return {
+          tpPrice,
+          slPrice,
+          tpValue,
+          slValue
+      };
+  }, [margin, entryPrice, leverage, side, tpRate, slRate, mode]);
 
   const handleSave = () => {
     if (!activeCoin || !margin) return;
@@ -270,26 +325,82 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
          </div>
       </div>
 
+      {/* TP/SL Sliders (Futures Only) */}
+      {mode === 'future' && (
+         <div className="space-y-3 pt-1 border-t border-gray-800/50">
+            {/* Take Profit Slider */}
+            <div className="space-y-1">
+                <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-gray-500 flex items-center gap-1">
+                        <TrendingUp size={10} className="text-accent-green"/> 止盈 (ROE %)
+                    </span>
+                    <span className="text-accent-green font-bold">{tpRate}%</span>
+                </div>
+                <input
+                    type="range"
+                    min="0"
+                    max="300"
+                    step="5"
+                    value={tpRate}
+                    onChange={(e) => setTpRate(parseInt(e.target.value))}
+                    className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-accent-green"
+                />
+                {tpSlResults && tpRate > 0 && (
+                     <div className="flex justify-between text-[9px] font-mono bg-accent-green/5 rounded px-2 py-1 border border-accent-green/10">
+                        <span className="text-gray-400">价格: <span className="text-gray-200">{tpSlResults.tpPrice.toFixed(2)}</span></span>
+                        <span className="text-accent-green">+{tpSlResults.tpValue.toFixed(2)} USDT</span>
+                     </div>
+                )}
+            </div>
+
+            {/* Stop Loss Slider */}
+            <div className="space-y-1">
+                <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-gray-500 flex items-center gap-1">
+                        <TrendingDown size={10} className="text-accent-red"/> 止损 (ROE %)
+                    </span>
+                    <span className="text-accent-red font-bold">{slRate}%</span>
+                </div>
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={slRate}
+                    onChange={(e) => setSlRate(parseInt(e.target.value))}
+                    className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-accent-red"
+                />
+                {tpSlResults && slRate > 0 && (
+                     <div className="flex justify-between text-[9px] font-mono bg-accent-red/5 rounded px-2 py-1 border border-accent-red/10">
+                        <span className="text-gray-400">价格: <span className="text-gray-200">{tpSlResults.slPrice.toFixed(2)}</span></span>
+                        <span className="text-accent-red">-{tpSlResults.slValue.toFixed(2)} USDT</span>
+                     </div>
+                )}
+            </div>
+         </div>
+      )}
+
       {/* Results Dashboard */}
-      <div className="bg-gray-900/30 border border-gray-800 rounded p-2 grid grid-cols-2 gap-2">
-          <div className="flex justify-between items-center">
+      <div className="bg-gray-900/30 border border-gray-800 rounded p-3 grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-0.5">
              <span className="text-[10px] text-gray-500">保证金</span>
-             <span className="text-xs font-mono text-gray-300">{margin ? margin.toFixed(1) : '--'}</span>
+             <span className="text-xs font-mono text-gray-300">{margin ? margin.toFixed(2) : '--'}</span>
           </div>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-0.5 items-end">
              <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                 <ArrowDownToLine size={10}/> 强平
+                 <ArrowDownToLine size={10}/> 强平价格
              </span>
              <span className="text-xs font-mono text-orange-400">{liqPrice ? liqPrice.toFixed(2) : '--'}</span>
           </div>
-          <div className="flex justify-between items-center col-span-2 border-t border-gray-800/50 pt-1 mt-1">
-             <span className="text-[10px] text-gray-500">预估盈亏</span>
-             <div className="text-right">
+          <div className="flex justify-between items-center col-span-2 border-t border-gray-800/50 pt-2 mt-1">
+             <span className="text-[10px] text-gray-500">预估盈亏 (ROE)</span>
+             <div className="text-right flex flex-col items-end">
                  <span className={`text-sm font-bold font-mono ${pnl && pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                    {pnl ? pnl.toFixed(2) : '--'}
+                    {pnl ? `${pnl > 0 ? '+' : ''}${pnl.toFixed(2)}` : '--'}
                  </span>
-                 <span className={`text-[10px] ml-2 ${roe && roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                    ({roe ? roe.toFixed(2) : '--'}%)
+                 {/* Enhanced ROE Display */}
+                 <span className={`text-xs font-bold ${roe && roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                    {roe ? `${roe > 0 ? '+' : ''}${roe.toFixed(2)}%` : '--'}
                  </span>
              </div>
           </div>
