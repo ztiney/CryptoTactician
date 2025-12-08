@@ -11,14 +11,29 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
   // Settings
   const [mode, setMode] = useState<TradeMode>('future');
   const [side, setSide] = useState<TradeSide>('long');
-  const [unit, setUnit] = useState<AmountUnit>('USDT');
-  const [basis, setBasis] = useState<CalculationBasis>('principal');
-  const [leverage, setLeverage] = useState<number>(10);
+  
+  // Persisted Settings: Unit & Basis
+  const [unit, setUnit] = useState<AmountUnit>(() => {
+      return (localStorage.getItem('calc_unit') as AmountUnit) || 'USDT';
+  });
+  const [basis, setBasis] = useState<CalculationBasis>(() => {
+      return (localStorage.getItem('calc_basis') as CalculationBasis) || 'principal';
+  });
+
+  // Persisted Settings: Leverage
+  const [leverage, setLeverage] = useState<number>(() => {
+      const saved = localStorage.getItem('calc_leverage');
+      return saved ? parseInt(saved, 10) : 10;
+  });
 
   // Inputs
   const [entryPrice, setEntryPrice] = useState<string>('');
   const [exitPrice, setExitPrice] = useState<string>('');
-  const [amountInput, setAmountInput] = useState<string>('');
+  
+  // Persisted Settings: Amount
+  const [amountInput, setAmountInput] = useState<string>(() => {
+      return localStorage.getItem('calc_amount') || '';
+  });
 
   // TP/SL State (Percentage of ROE) - Initialized from localStorage
   const [tpRate, setTpRate] = useState<number>(() => {
@@ -43,13 +58,32 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
     }
   }, [activeCoin]);
 
-  // Handle Mode Switching
+  // Handle Mode Switching & Smart Leverage Restore
   useEffect(() => {
     if(mode === 'spot') {
         setLeverage(1);
-        // We do NOT reset TP/SL here anymore, so they are remembered when switching back to Futures
+    } else {
+        // When switching back to Future, try to restore the saved leverage
+        const saved = localStorage.getItem('calc_leverage');
+        if (saved) {
+            setLeverage(parseInt(saved, 10));
+        } else {
+            setLeverage(10); // Default if nothing saved
+        }
     }
   }, [mode]);
+
+  // Persistence Effects
+  useEffect(() => { localStorage.setItem('calc_unit', unit); }, [unit]);
+  useEffect(() => { localStorage.setItem('calc_basis', basis); }, [basis]);
+  useEffect(() => { localStorage.setItem('calc_amount', amountInput); }, [amountInput]);
+  
+  // Only save leverage to storage if we are in Future mode (to avoid saving '1' from Spot mode)
+  useEffect(() => {
+      if (mode === 'future') {
+          localStorage.setItem('calc_leverage', leverage.toString());
+      }
+  }, [leverage, mode]);
 
   // Persist TP/SL settings whenever they change
   useEffect(() => {
