@@ -145,13 +145,24 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
 
     setMargin(requiredMargin);
 
-    // 3. Calculate Liquidation Price (Approximate)
+    // 3. Calculate Liquidation Price (Approximate with MMR)
     if (mode === 'future') {
+        // Standard Maintenance Margin Rate (MMR) 
+        // Typically 0.5% (0.005) for major pairs. 
+        // Liquidation happens when Margin Balance <= Maintenance Margin
+        const MMR = 0.005; 
+        
         let liq = 0;
         if (side === 'long') {
-            liq = entry * (1 - 1/lev);
+            // Formula: Entry * (1 - 1/Lev) is Bankruptcy Price (0 Margin)
+            // Liq Price is slightly higher: Bankruptcy / (1 - MMR)
+            const bankruptcyPrice = entry * (1 - 1/lev);
+            liq = bankruptcyPrice / (1 - MMR);
         } else {
-            liq = entry * (1 + 1/lev);
+            // Formula: Entry * (1 + 1/Lev) is Bankruptcy Price
+            // Liq Price is slightly lower: Bankruptcy / (1 + MMR)
+            const bankruptcyPrice = entry * (1 + 1/lev);
+            liq = bankruptcyPrice / (1 + MMR);
         }
         setLiqPrice(liq > 0 ? liq : 0);
     } else {
@@ -424,7 +435,10 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
              <span className="text-[10px] text-gray-500 flex items-center gap-1">
                  <ArrowDownToLine size={10}/> 强平价格
              </span>
-             <span className="text-xs font-mono text-orange-400">{liqPrice ? liqPrice.toFixed(2) : '--'}</span>
+             <div className="flex flex-col items-end">
+                 <span className="text-xs font-mono text-orange-400">{liqPrice ? liqPrice.toFixed(2) : '--'}</span>
+                 {liqPrice && <span className="text-[8px] text-gray-600">MMR 0.5%</span>}
+             </div>
           </div>
           <div className="flex justify-between items-center col-span-2 border-t border-gray-800/50 pt-2 mt-1">
              <span className="text-[10px] text-gray-500">预估盈亏 (ROE)</span>
