@@ -3,12 +3,11 @@ import { createPortal } from 'react-dom';
 import { Calculator } from './components/Calculator';
 import { Positions } from './components/Positions';
 import { Prediction } from './components/Prediction';
+import { Averaging } from './components/Averaging';
 import { getTopCoins } from './services/api';
-import { Coin, Position } from './types';
+import { Coin, Position, Tab } from './types';
 import { usePiP } from './hooks/usePiP';
-import { Layers, Search, Calculator as CalcIcon, Gamepad2, Minimize2, Pin, X, List, Minus } from 'lucide-react';
-
-type Tab = 'calculator' | 'positions' | 'prediction';
+import { Layers, Search, Calculator as CalcIcon, Gamepad2, Minimize2, Pin, X, List, Minus, Scale } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('calculator');
@@ -84,43 +83,50 @@ export default function App() {
   const AppContent = (
     <div className={`w-full bg-gray-950 text-gray-200 font-sans selection:bg-accent-blue/30 flex flex-col overflow-hidden transition-[height] duration-300 ease-in-out ${isCollapsed ? 'h-[48px]' : 'h-screen'}`}>
       
-      {/* Unified Header */}
-      <div className="h-12 bg-gray-900 border-b border-gray-800 flex justify-between items-center px-3 shrink-0 select-none">
-          <div className="flex bg-gray-950 rounded p-0.5 border border-gray-800">
+      {/* Unified Header - Adjusted for 4 buttons */}
+      <div className="h-12 bg-gray-900 border-b border-gray-800 flex justify-between items-center px-2 shrink-0 select-none">
+          <div className="flex bg-gray-950 rounded p-0.5 border border-gray-800 overflow-x-auto no-scrollbar max-w-[80%]">
               <button 
                 onClick={() => setActiveTab('calculator')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-[2px] text-xs font-bold transition-all ${activeTab === 'calculator' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'calculator' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
               >
                   <CalcIcon size={12} /> 计算
               </button>
               <button 
+                onClick={() => setActiveTab('averaging')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'averaging' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                title="补仓成本计算"
+              >
+                  <Scale size={12} /> 补仓
+              </button>
+              <button 
                 onClick={() => setActiveTab('positions')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-[2px] text-xs font-bold transition-all ${activeTab === 'positions' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'positions' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
               >
                   <List size={12} /> 持仓
               </button>
               <button 
                 onClick={() => setActiveTab('prediction')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-[2px] text-xs font-bold transition-all ${activeTab === 'prediction' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'prediction' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
               >
-                  <Gamepad2 size={12} /> 事件合约
+                  <Gamepad2 size={12} /> 事件
               </button>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
              <button 
                 onClick={toggleCollapse}
                 className={`p-1.5 rounded transition-colors ${isCollapsed ? 'text-accent-blue bg-accent-blue/10' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'}`}
                 title={isCollapsed ? "展开" : "最小化"}
             >
-                <Minus size={16} />
+                <Minus size={14} />
             </button>
             <button 
                     onClick={togglePiP}
                     className={`p-1.5 rounded transition-colors ${pipWindow ? 'text-accent-blue bg-accent-blue/10' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'}`}
                     title={pipWindow ? "关闭悬浮窗" : "开启悬浮窗"}
                 >
-                    {pipWindow ? <X size={16} /> : <Pin size={16} />}
+                    {pipWindow ? <X size={14} /> : <Pin size={14} />}
             </button>
           </div>
       </div>
@@ -163,6 +169,10 @@ export default function App() {
                 </div>
             )}
 
+            {activeTab === 'averaging' && (
+                <Averaging />
+            )}
+
             {activeTab === 'positions' && (
                 <div className="h-full">
                     <Positions positions={positions} prices={currentPrices} onDelete={handleDeletePosition} />
@@ -178,7 +188,7 @@ export default function App() {
       
       {!pipWindow && !isCollapsed && (
         <footer className="py-1 text-center text-[9px] text-gray-700 border-t border-gray-900 shrink-0 select-none bg-gray-950 transition-opacity duration-200">
-            CryptoTactician v1.3
+            CryptoTactician v1.4
         </footer>
       )}
     </div>

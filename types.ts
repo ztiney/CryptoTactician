@@ -36,3 +36,5 @@ export interface PredictionGame {
   settledPrice?: number;
   pnl?: number; // New: Resulting PnL
 }
+
+export type Tab = 'calculator' | 'positions' | 'prediction' | 'averaging';
