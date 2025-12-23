@@ -25,6 +25,12 @@ export const Positions: React.FC<PositionsProps> = ({ positions, prices, onDelet
     setTotalPnl(total);
   }, [positions, prices]);
 
+  const formatPrice = (p: number) => {
+      if (p < 0.0001) return p.toFixed(8);
+      if (p < 1) return p.toFixed(6);
+      return p.toFixed(4);
+  };
+
   if (positions.length === 0) {
     return (
       <div className="p-4 text-center text-gray-600 text-[10px]">
@@ -48,7 +54,6 @@ export const Positions: React.FC<PositionsProps> = ({ positions, prices, onDelet
             ? (currentPrice - pos.entryPrice) * pos.amount
             : (pos.entryPrice - currentPrice) * pos.amount;
           
-          // Cost (Principal) = (Total Value in Coin * Entry Price) / Leverage
           const cost = (pos.amount * pos.entryPrice) / pos.leverage;
           const roe = (pnl / cost) * 100;
 
@@ -74,7 +79,7 @@ export const Positions: React.FC<PositionsProps> = ({ positions, prices, onDelet
                   <span className={`${roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>{roe.toFixed(2)}%</span>
               </div>
               <div className="flex justify-between items-center text-[9px] text-gray-600 font-mono mt-0.5">
-                  <span>@{pos.entryPrice} → {currentPrice}</span>
+                  <span>@{formatPrice(pos.entryPrice)} → {formatPrice(currentPrice)}</span>
               </div>
 
               <button 

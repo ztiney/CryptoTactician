@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Scale, ArrowRight, TrendingDown, Info, Calculator, DollarSign } from 'lucide-react';
 
@@ -39,15 +38,7 @@ export const Averaging: React.FC = () => {
   const newAvgPrice = totalQty > 0 ? totalCost / totalQty : 0;
   const reductionPercent = p1 > 0 ? ((p1 - newAvgPrice) / p1) * 100 : 0;
 
-  // --- Target Logic: What price do I need to buy at? ---
-  // Formula: TargetAvg = (P1*Q1 + InvestAmt) / (Q1 + InvestAmt/BuyPrice)
-  // Let V1 = P1 * Q1
-  // TargetAvg * (Q1 + InvestAmt/BuyPrice) = V1 + InvestAmt
-  // Q1 + InvestAmt/BuyPrice = (V1 + InvestAmt) / TargetAvg
-  // InvestAmt/BuyPrice = (V1 + InvestAmt) / TargetAvg - Q1
-  // BuyPrice = InvestAmt / ((V1 + InvestAmt) / TargetAvg - Q1)
-  
-  // Fix: Parsed numeric values for target calculation and replaced the missing 'tAvg' reference.
+  // --- Target Logic ---
   const tAvgVal = parseFloat(targetAvg);
   const investVal = parseFloat(planToInvest);
   let requiredEntryPrice = 0;
@@ -62,7 +53,7 @@ export const Averaging: React.FC = () => {
   return (
     <div className="p-4 space-y-4 text-sm bg-gray-950 min-h-full">
       <div className="flex items-center gap-2 text-accent-blue mb-2">
-          <Scale size={16} />
+          <Scale size(16) />
           <h2 className="font-bold text-xs uppercase tracking-wider">现货补仓成本计算</h2>
       </div>
 
@@ -144,7 +135,7 @@ export const Averaging: React.FC = () => {
               <div className="flex flex-col">
                   <span className="text-[10px] text-gray-500 uppercase">补仓后新均价</span>
                   <span className="text-lg font-bold font-mono text-accent-blue">
-                      {newAvgPrice > 0 ? newAvgPrice.toFixed(4) : '--'}
+                      {newAvgPrice > 0 ? newAvgPrice.toFixed(8).replace(/\.?0+$/, '') : '--'}
                   </span>
               </div>
               <div className="flex flex-col items-end">
@@ -166,7 +157,7 @@ export const Averaging: React.FC = () => {
           </div>
       </div>
 
-      {/* Reverse Target Calculator: The "What Price?" Logic */}
+      {/* Reverse Target Calculator */}
       <div className="bg-gray-900/30 border border-gray-800/50 rounded-lg p-3 space-y-3">
           <div className="flex items-center justify-between">
               <div className="text-[10px] text-gray-500 font-bold flex items-center gap-1 uppercase">
@@ -204,7 +195,7 @@ export const Averaging: React.FC = () => {
                   <ArrowRight size={14} className="text-gray-700" />
                   <div className="flex-1 text-center">
                       <div className="text-lg font-bold font-mono text-white">
-                          {requiredEntryPrice > 0 ? requiredEntryPrice.toFixed(4) : '--'}
+                          {requiredEntryPrice > 0 ? requiredEntryPrice.toFixed(8).replace(/\.?0+$/, '') : '--'}
                       </div>
                       <div className="text-[9px] text-gray-600 uppercase">挂单参考价</div>
                   </div>
@@ -212,7 +203,7 @@ export const Averaging: React.FC = () => {
           </div>
           <p className="text-[9px] text-gray-600 italic leading-relaxed">
               * 逻辑说明：根据你当前的持仓，如果投入 <span className="text-gray-400">{planToInvest || 'X'} U</span>，
-              买入价必须达到 <span className="text-gray-400">{requiredEntryPrice ? requiredEntryPrice.toFixed(2) : 'Y'}</span> 才能将整体均价摊平至 <span className="text-gray-400">{targetAvg || 'Z'}</span>。
+              买入价必须达到 <span className="text-gray-400">{requiredEntryPrice ? requiredEntryPrice.toFixed(6) : 'Y'}</span> 才能将整体均价摊平至 <span className="text-gray-400">{targetAvg || 'Z'}</span>。
           </p>
       </div>
 

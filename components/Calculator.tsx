@@ -63,12 +63,11 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
     if(mode === 'spot') {
         setLeverage(1);
     } else {
-        // When switching back to Future, try to restore the saved leverage
         const saved = localStorage.getItem('calc_leverage');
         if (saved) {
             setLeverage(parseInt(saved, 10));
         } else {
-            setLeverage(10); // Default if nothing saved
+            setLeverage(10);
         }
     }
   }, [mode]);
@@ -78,14 +77,12 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
   useEffect(() => { localStorage.setItem('calc_basis', basis); }, [basis]);
   useEffect(() => { localStorage.setItem('calc_amount', amountInput); }, [amountInput]);
   
-  // Only save leverage to storage if we are in Future mode (to avoid saving '1' from Spot mode)
   useEffect(() => {
       if (mode === 'future') {
           localStorage.setItem('calc_leverage', leverage.toString());
       }
   }, [leverage, mode]);
 
-  // Persist TP/SL settings whenever they change
   useEffect(() => {
       localStorage.setItem('calc_tp_rate', tpRate.toString());
       localStorage.setItem('calc_sl_rate', slRate.toString());
@@ -112,7 +109,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
     let positionSizeCoins = 0;
     let requiredMargin = 0;
 
-    // 1. Calculate Margin & Size
     if (unit === 'COIN') {
       positionSizeCoins = amt;
       requiredMargin = (positionSizeCoins * entry) / lev;
@@ -127,7 +123,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
       }
     }
 
-    // 2. Calculate PnL (if exit price exists)
     if (!isNaN(exit)) {
         let profit = 0;
         if (side === 'long') {
@@ -145,22 +140,13 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
 
     setMargin(requiredMargin);
 
-    // 3. Calculate Liquidation Price (Approximate with MMR)
     if (mode === 'future') {
-        // Standard Maintenance Margin Rate (MMR) 
-        // Typically 0.5% (0.005) for major pairs. 
-        // Liquidation happens when Margin Balance <= Maintenance Margin
         const MMR = 0.005; 
-        
         let liq = 0;
         if (side === 'long') {
-            // Formula: Entry * (1 - 1/Lev) is Bankruptcy Price (0 Margin)
-            // Liq Price is slightly higher: Bankruptcy / (1 - MMR)
             const bankruptcyPrice = entry * (1 - 1/lev);
             liq = bankruptcyPrice / (1 - MMR);
         } else {
-            // Formula: Entry * (1 + 1/Lev) is Bankruptcy Price
-            // Liq Price is slightly lower: Bankruptcy / (1 + MMR)
             const bankruptcyPrice = entry * (1 + 1/lev);
             liq = bankruptcyPrice / (1 + MMR);
         }
@@ -174,15 +160,10 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
     calculate();
   }, [entryPrice, exitPrice, amountInput, leverage, mode, side, unit, basis]);
 
-  // Derived calculations for TP/SL
   const tpSlResults = useMemo(() => {
       if (!margin || !entryPrice || mode !== 'future') return null;
       const entry = parseFloat(entryPrice);
       if (isNaN(entry)) return null;
-
-      // Formula: Target Price = Entry * (1 ± (ROE% / Leverage))
-      // Long: + for TP, - for SL
-      // Short: - for TP, + for SL
       
       const tpFactor = (tpRate / 100) / leverage;
       const slFactor = (slRate / 100) / leverage;
@@ -199,7 +180,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
       }
 
       const tpValue = margin * (tpRate / 100);
-      const slValue = margin * (slRate / 100); // Loss amount
+      const slValue = margin * (slRate / 100);
 
       return {
           tpPrice,
@@ -243,9 +224,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
 
   return (
     <div className="p-4 space-y-4 text-sm">
-      {/* Mode & Side Selection */}
       <div className="grid grid-cols-2 gap-3">
-         {/* Mode Switch */}
          <div className="bg-gray-900 p-0.5 rounded flex text-center">
             <button
                 onClick={() => setMode('spot')}
@@ -261,7 +240,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
             </button>
          </div>
 
-         {/* Side Switch */}
          <div className="flex bg-gray-900 rounded p-0.5">
             <button
             onClick={() => setSide('long')}
@@ -287,7 +265,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
         </div>
       </div>
 
-      {/* Leverage - Always rendered to maintain layout height, dimmed in Spot mode */}
       <div className={`space-y-1 transition-opacity duration-200 ${mode === 'spot' ? 'opacity-25 pointer-events-none' : ''}`}>
           <div className="flex justify-between items-center text-[10px] text-gray-500 uppercase">
               <span>杠杆倍数</span>
@@ -303,7 +280,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
           />
       </div>
 
-      {/* Price Inputs */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
            <div className="flex justify-between items-end">
@@ -341,7 +317,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
         </div>
       </div>
 
-      {/* Amount Input */}
       <div className="space-y-1">
          <div className="flex justify-between text-[10px] text-gray-500">
             <span>数量 / 金额</span>
@@ -370,10 +345,8 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
          </div>
       </div>
 
-      {/* TP/SL Sliders (Futures Only) */}
       {mode === 'future' && (
          <div className="space-y-3 pt-1 border-t border-gray-800/50">
-            {/* Take Profit Slider */}
             <div className="space-y-1">
                 <div className="flex justify-between items-center text-[10px]">
                     <span className="text-gray-500 flex items-center gap-1">
@@ -392,13 +365,12 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
                 />
                 {tpSlResults && tpRate > 0 && (
                      <div className="flex justify-between text-[9px] font-mono bg-accent-green/5 rounded px-2 py-1 border border-accent-green/10">
-                        <span className="text-gray-400">价格: <span className="text-gray-200">{tpSlResults.tpPrice.toFixed(2)}</span></span>
+                        <span className="text-gray-400">价格: <span className="text-gray-200">{tpSlResults.tpPrice.toFixed(6)}</span></span>
                         <span className="text-accent-green">+{tpSlResults.tpValue.toFixed(2)} USDT</span>
                      </div>
                 )}
             </div>
 
-            {/* Stop Loss Slider */}
             <div className="space-y-1">
                 <div className="flex justify-between items-center text-[10px]">
                     <span className="text-gray-500 flex items-center gap-1">
@@ -417,7 +389,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
                 />
                 {tpSlResults && slRate > 0 && (
                      <div className="flex justify-between text-[9px] font-mono bg-accent-red/5 rounded px-2 py-1 border border-accent-red/10">
-                        <span className="text-gray-400">价格: <span className="text-gray-200">{tpSlResults.slPrice.toFixed(2)}</span></span>
+                        <span className="text-gray-400">价格: <span className="text-gray-200">{tpSlResults.slPrice.toFixed(6)}</span></span>
                         <span className="text-accent-red">-{tpSlResults.slValue.toFixed(2)} USDT</span>
                      </div>
                 )}
@@ -425,7 +397,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
          </div>
       )}
 
-      {/* Results Dashboard */}
       <div className="bg-gray-900/30 border border-gray-800 rounded p-3 grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-0.5">
              <span className="text-[10px] text-gray-500">保证金</span>
@@ -436,7 +407,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
                  <ArrowDownToLine size={10}/> 强平价格
              </span>
              <div className="flex flex-col items-end">
-                 <span className="text-xs font-mono text-orange-400">{liqPrice ? liqPrice.toFixed(2) : '--'}</span>
+                 <span className="text-xs font-mono text-orange-400">{liqPrice ? liqPrice.toFixed(6) : '--'}</span>
                  {liqPrice && <span className="text-[8px] text-gray-600">MMR 0.5%</span>}
              </div>
           </div>
@@ -446,7 +417,6 @@ export const Calculator: React.FC<CalculatorProps> = ({ activeCoin, onSavePositi
                  <span className={`text-sm font-bold font-mono ${pnl && pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                     {pnl ? `${pnl > 0 ? '+' : ''}${pnl.toFixed(2)}` : '--'}
                  </span>
-                 {/* Enhanced ROE Display */}
                  <span className={`text-xs font-bold ${roe && roe >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                     {roe ? `${roe > 0 ? '+' : ''}${roe.toFixed(2)}%` : '--'}
                  </span>
